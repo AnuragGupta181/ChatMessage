@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #333;
+        color: white;
+        padding: 0.75rem 1rem;
+        font-size: 1.1rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        }
+
+        .brand {
+        font-weight: bold;
+        }
+
+        .user-info span {
+        font-weight: bold;
+        color: #fdd835;
+        }
+
+        @media (max-width: 600px) {
+        .brand {
+            font-size: 1rem;
+        }
+        .user-info {
+            font-size: 0.9rem;
+        }
+    }
+
+
+    #chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .message {
+      max-width: 70%;
+      padding: 0.6rem 1rem;
+      border-radius: 15px;
+      margin: 0.5rem 0;
+      position: relative;
+      word-break: break-word;
+    }
+
+    .my-message {
+      align-self: flex-end;
+      background-color: #333;
+      color: white;
+      border-bottom-right-radius: 0;
+    }
+
+    .other-message {
+      align-self: flex-start;
+      background-color: #f1f1f1;
+      color: black;
+      border-bottom-left-radius: 0;
+    }
+
+    .system-message {
+      align-self: center;
+      background: rgba(0,0,0,0.2);
+      color: #333;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    .timestamp {
+      font-size: 0.7rem;
+      position: absolute;
+      bottom: -1.2rem;
+      right: 0.5rem;
+      opacity: 0.6;
+    }
+
+    #form {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    #input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 1rem;
+      border: none;
+    }
+
+    #form button {
+      padding: 0.5rem 1rem;
+      border-radius: 1rem;
+      border: none;
+      background-color: #333;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+      .message {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<nav id="navbar">
+    <div class="brand">💬 Chatting App</div>
+    <div class="user-info">Welcome, <span id="username-display">User</span></div>
+</nav>  
+<body>
+  <div id="chat-container"></div>
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Type your message..." />
+    <button>Send</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const container = document.getElementById('chat-container');
+
+    let username = '';
+
+    while (!username) {
+      username = prompt("Enter your name:");
+    }
+    document.getElementById('username-display').textContent = username;
+
+    socket.emit('join', username);
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (msg) {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        appendMessage(`${msg}`, 'my-message', time);
+        socket.emit('chat message', { user: username, text: msg });
+        input.value = '';
+      }
+    });
+
+    function appendMessage(text, className, time) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message', className);
+      msgDiv.innerHTML = text;
+      if (time) {
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'timestamp';
+        timeSpan.textContent = time;
+        msgDiv.appendChild(timeSpan);
+      }
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    socket.on('chat message', ({ user, text, time }) => {
+      if (user !== username) {
+        appendMessage(`${user}: ${text}`, 'other-message', time);
+      }
+    });
+
+    socket.on('system', (msg) => {
+      appendMessage(msg, 'system-message');
+    });
+  </script>
+</body>
+</html>
