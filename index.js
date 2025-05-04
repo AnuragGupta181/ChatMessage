@@ -7,6 +7,10 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+//const PORT = process.env.PORT || 9000;
+//const socket = io('https://your-app-name.onrender.com');
+
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
@@ -35,6 +39,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(9000, () => {
-  console.log("🚀 Server started on http://localhost:9000");
-});
+const PORT = process.env.PORT || 9000;
+server.listen(PORT, () => console.log(`Server started at http://localhost:${PORT}`));
+
